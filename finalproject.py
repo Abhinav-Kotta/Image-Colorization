@@ -9,7 +9,6 @@ from keras.callbacks import ReduceLROnPlateau
 from keras.callbacks import ModelCheckpoint
 from keras.datasets import cifar10
 from keras import backend as K
-from keras.models import load_model
 
 '---------------'
 'PREPARING THE DATASETS'
@@ -174,6 +173,6 @@ datasetGtoC = datasetGtoC.reshape((10, 10, img_rows, img_cols, channels))
 datasetGtoC = np.vstack([np.hstack(i) for i in datasetGtoC])
 plt.figure()
 plt.axis('off')
-plt.title('Colorized test images (Predicted)')
+plt.title('Predicted Colorized Images')
 plt.imshow(datasetGtoC, interpolation='none')
 plt.show()
