@@ -165,13 +165,6 @@ if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
 filepath = os.path.join(save_dir, model_name)
 
-# reduce learning rate by sqrt(0.1) if the loss does not improve in 5 epochs
-lr_reducer = ReduceLROnPlateau(factor=np.sqrt(0.1),
-                               cooldown=0,
-                               patience=5,
-                               verbose=1,
-                               min_lr=0.5e-6)
-
 # save weights for future use (e.g. reload parameters w/o training)
 checkpoint = ModelCheckpoint(filepath=filepath,
                              monitor='val_loss',
@@ -182,7 +175,7 @@ checkpoint = ModelCheckpoint(filepath=filepath,
 autoencoder.compile(loss='mse', optimizer='adam')
 
 # called every epoch
-callbacks = [lr_reducer, checkpoint]
+callbacks = [checkpoint]
 
 # train the autoencoder
 autoencoder.fit(x_train_gray,
