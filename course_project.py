@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+from torchsummary import summary
 
 
 # In[2]:
@@ -38,43 +39,43 @@ class Net1(nn.Module):
         super(Net1, self).__init__()
 
         # Define layers of the autoencoder neural network
-        
+
         # Encoder
         self.conv1 = nn.Conv2d(1, 64, 3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, 3, padding=1)
         self.maxpool1 = nn.MaxPool2d(2)
         self.conv3 = nn.Conv2d(128, 256, 3, padding=1)
         self.maxpool2 = nn.MaxPool2d(2)
-        
+
         # Code (Latent Representation)
         self.fc1 = nn.Linear(256*8*8, 256)
         self.fc2 = nn.Linear(256, 256*8*8)
-        
+
         # Decoder
         self.upsample1 = nn.Upsample(scale_factor=2, mode='bilinear')
         self.deconv1 = nn.ConvTranspose2d(256, 128, 3, padding=1)
         self.upsample2 = nn.Upsample(scale_factor=2, mode='bilinear')
         self.deconv2 = nn.ConvTranspose2d(128, 64, 3, padding=1)
         self.deconv3 = nn.ConvTranspose2d(64, 3, 3, padding=1)
-    
+
     def forward(self, X):
-        
+
         # Encoder
         output = F.relu(self.conv1(X))
         output = F.relu(self.maxpool1(self.conv2(output)))
         output = F.relu(self.maxpool2(self.conv3(output)))
-        
+
         # Latent Representation
         output = torch.flatten(output,1) # Flatten
         output = F.relu(self.fc1(output))
         output = F.relu(self.fc2(output))
         output = torch.reshape(output, (-1, 256, 8, 8)) # Reshape
-        
+
         # Decoder
         output = F.relu(self.deconv1(self.upsample1(output)))
         output = F.relu(self.deconv2(self.upsample2(output)))
         output = F.sigmoid(self.deconv3(output))
-        
+
         return output
 
 # Construct Autoencoder
@@ -83,32 +84,32 @@ class Net2(nn.Module):
         super(Net2, self).__init__()
 
         # Define layers of the autoencoder neural network
-        
+
         # Encoder
         self.conv1 = nn.Conv2d(1, 64, 3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, 3, padding=1)
         self.maxpool1 = nn.MaxPool2d(2)
         self.conv3 = nn.Conv2d(128, 256, 3, padding=1)
-        
+
         # Code (Latent Representation)
         self.conv4 = nn.Conv2d(256, 256, 3, padding=1)
-        
+
         # Decoder
         self.deconv1 = nn.ConvTranspose2d(256, 128, 3, padding=1)
         self.upsample1 = nn.Upsample(scale_factor=2, mode='bilinear')
         self.deconv2 = nn.ConvTranspose2d(128, 64, 3, padding=1)
         self.deconv3 = nn.ConvTranspose2d(64, 3, 3, padding=1)
-    
+
     def forward(self, X):
-        
+
         # Encoder
         output = F.relu(self.conv1(X))
         output = F.relu(self.maxpool1(self.conv2(output)))
         output = F.relu(self.conv3(output))
-        
+
         # Latent Representation
         output = self.conv4(output)
-        
+
         # Decoder
         output = F.relu(self.deconv1(output))
         output = F.relu(self.deconv2(self.upsample1(output)))
@@ -126,7 +127,7 @@ import torch.optim as optim
 from torchvision.transforms.functional import rgb_to_grayscale
 
 
-# In[26]:
+# In[5]:
 
 
 # Transforms
@@ -149,7 +150,7 @@ train_loader = torch.utils.data.DataLoader(train_data, batch_size=mini_batch_siz
 test_loader = torch.utils.data.DataLoader(test_data, batch_size=mini_batch_size, shuffle=False, num_workers=2)
 
 
-# In[27]:
+# In[6]:
 
 
 # Define the training function
@@ -194,7 +195,7 @@ def test(model):
     return total_loss/len(test_loader)
 
 
-# In[15]:
+# In[7]:
 
 
 # Define hyperparameters
@@ -202,11 +203,14 @@ learning_rate = 1e-4
 num_epochs = 20
 
 
-# In[16]:
+# In[10]:
 
 
 # Create the model with FC latent code
 net1 = Net1().to(device)
+
+# Print a summary of the model WIP
+summary(net1, (1, 32, 32))
 
 # Define the loss function and optimizer
 loss_func = nn.MSELoss()
@@ -218,7 +222,7 @@ try:
 except:
     # Perform training
     training_losses = train(net1, num_epochs, optimizer, loss_func)
-    
+
     # Save model
     torch.save(net1.state_dict(), './saved models/net1.pth')
 
@@ -226,11 +230,25 @@ except:
 net1.eval()
 
 
-# In[31]:
+# In[11]:
+
+
+# Plot the losses over epochs for model 1
+plt.plot(training_losses)
+plt.title("Training Loss vs Epochs")
+plt.xlabel("# Epochs")
+plt.ylabel("Loss")
+plt.show()
+
+
+# In[12]:
 
 
 # Create the model with CNN latent code
 net2 = Net2().to(device)
+
+# Print a summary of the model WIP
+summary(net2, (1, 32, 32))
 
 # Define the loss function and optimizer
 loss_func = nn.MSELoss()
@@ -242,7 +260,7 @@ try:
 except:
     # Perform training
     training_losses = train(net2, num_epochs, optimizer, loss_func)
-    
+
     # Save model
     torch.save(net2.state_dict(), './saved models/net2.pth')
 
@@ -250,14 +268,25 @@ except:
 net2.eval()
 
 
-# In[29]:
+# In[13]:
+
+
+# Plot the losses over epochs for model 2
+plt.plot(training_losses)
+plt.title("Training Loss vs Epochs")
+plt.xlabel("# Epochs")
+plt.ylabel("Loss")
+plt.show()
+
+
+# In[ ]:
 
 
 # Grab images for testing
 test_images, _ = next(iter(test_loader))
 
 
-# In[24]:
+# In[ ]:
 
 
 ### Test Net1 ###
@@ -299,7 +328,7 @@ plt.imshow(display_test, interpolation='none')
 plt.show()
 
 
-# In[32]:
+# In[ ]:
 
 
 ### Test Net2 ###
@@ -339,22 +368,4 @@ plt.axis('off')
 plt.title('Test Images (Fully CNN Autoencoder)')
 plt.imshow(display_test, interpolation='none')
 plt.show()
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
